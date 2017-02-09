@@ -102,6 +102,29 @@ interface
  end subroutine multipoles_out
 end interface
 
+!KYSC 20170209 quadrupole tensor
+interface
+ subroutine quadrupole_tensor_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&  
+  &  ntypat,rprimd,typat,ucvol,xred,ziontypat)
+  use defs_basis
+  use defs_abitypes
+  implicit none
+  integer,intent(in) :: natom
+  integer,intent(in) :: nfft
+  integer,intent(in) :: nspden
+  integer,intent(in) :: ntypat
+  type(mpi_type),intent(in) :: mpi_enreg
+  real(dp), intent(in) :: ucvol
+  integer,intent(in) :: ngfft(3)
+  real(dp),intent(in) :: arraysp(nfft,nspden)
+  real(dp),intent(in) :: rprimd(3,3)
+  integer, intent(in) :: typat(natom)
+  real(dp),intent(in) :: xred(3,natom)
+  real(dp),intent(in) :: ziontypat(ntypat)
+ end subroutine quadrupole_tensor_out
+end interface
+!KYSC END
+
 interface
  subroutine overlap_g(doti,dotr,mpw,npw_k1,npw_k2,nspinor,pwind_k,vect1,vect2)
   use defs_basis

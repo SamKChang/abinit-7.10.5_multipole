@@ -414,6 +414,9 @@ subroutine dtset_copy(dtout, dtin)
  dtout%prtden             = dtin%prtden
  dtout%prtdensph          = dtin%prtdensph
  dtout%prtdipole          = dtin%prtdipole
+ !KYSC 20170209 multipole interface
+ dtout%prtmultipole          = dtin%prtmultipole
+ !KYSC END
  dtout%prtdos             = dtin%prtdos
  dtout%prtdosm            = dtin%prtdosm
  dtout%prtefg             = dtin%prtefg
