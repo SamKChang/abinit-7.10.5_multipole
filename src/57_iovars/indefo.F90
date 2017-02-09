@@ -557,6 +557,9 @@ subroutine indefo(dtsets,ndtset_alloc,nprocs)
    dtsets(idtset)%prtden=1;if (dtsets(idtset)%nimage>1) dtsets(idtset)%prtden=0
    dtsets(idtset)%prtdensph=0
    dtsets(idtset)%prtdipole=0
+   !KYSC 20170209 multipole interface
+   dtsets(idtset)%prtmultipole=0
+   !KYSC END
    dtsets(idtset)%prtdos=0
    dtsets(idtset)%prtdosm=0
    dtsets(idtset)%prtefg=0
