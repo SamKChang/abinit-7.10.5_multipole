@@ -1215,6 +1215,17 @@ subroutine outscfcv(atindx1,cg,compch_fft,compch_sph,cprj,dimcprj,dtefield,dtfil
 &   dtset%typat,ucvol,xred,dtset%ziontypat)
  end if ! prtmultipoles
 
+ !KYSC 20170209 multipole interface
+ print *, "checking prtmultipole"
+ if (dtset%prtmultipole == 1) then
+   print *, "yo prtmultipole is set to 1"
+   call quadrupole_tensor_out(rhor,mpi_enreg,natom,nfft,ngfft,dtset%nspden,dtset%ntypat,rprimd,&
+&   dtset%typat,ucvol,xred,dtset%ziontypat)
+ else
+   print *, "prtmultipole is not 1...."
+ end if ! prtmultipoles
+ !KYSC END
+
 !BoltzTraP output files in GENEric format
  if (dtset%prtbltztrp == 1) then
 

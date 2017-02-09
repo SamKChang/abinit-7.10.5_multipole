@@ -461,6 +461,9 @@ type dataset_type
  integer :: prtden
  integer :: prtdensph
  integer :: prtdipole
+ !KYSC 20170209 multipole interface
+ integer :: prtmultipole
+ !KYSC END
  integer :: prtdos
  integer :: prtdosm
  integer :: prtefg

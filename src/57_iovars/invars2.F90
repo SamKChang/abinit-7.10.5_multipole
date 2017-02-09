@@ -1786,6 +1786,14 @@ subroutine invars2(bravais,dtset,iout,jdtset,lenstr,&
  call intagm(dprarr,intarr,jdtset,marr,1,string(1:lenstr),'prtdipole',tread,'INT')
  if(tread==1) dtset%prtdipole=intarr(1)
 
+ !KYSC 20170209 multipole interface
+ call intagm(dprarr,intarr,jdtset,marr,1,string(1:lenstr),'prtmultipole',tread,'INT')
+ if(tread==1) then 
+   print *, "yo prtmultipole read"
+   dtset%prtmultipole=intarr(1)
+ endif
+ !KYSC END
+
  call intagm(dprarr,intarr,jdtset,marr,1,string(1:lenstr),'prtdos',tread,'INT')
  if(tread==1) dtset%prtdos=intarr(1)
 

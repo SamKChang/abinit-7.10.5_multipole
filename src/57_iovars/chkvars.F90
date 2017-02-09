@@ -170,7 +170,7 @@ subroutine chkvars (string)
  list_vars=trim(list_vars)//' polcen posdoppler positron posnstep posocc postoldfe postoldff ppmfrq ppmodel'  
  list_vars=trim(list_vars)//' prepanl prepgkk papiopt'
  list_vars=trim(list_vars)//' prtatlist prtbbb prtbltztrp prtcif prtcml prtcs prtden'
- list_vars=trim(list_vars)//' prtdensph prtdipole prtdos prtdosm prtefg prteig prtelf'
+ list_vars=trim(list_vars)//' prtdensph prtdipole prtdos prtdosm prtefg prteig prtelf prtmultipole'
  list_vars=trim(list_vars)//' prtfc prtfsurf prtgden prtgeo prtgkk prtkden prtkpt prtlden'
  list_vars=trim(list_vars)//' prtnabla prtnest prtposcar prtpot'
  list_vars=trim(list_vars)//' prtspcur prtstm prtsuscep prtvha prtvhxc'
