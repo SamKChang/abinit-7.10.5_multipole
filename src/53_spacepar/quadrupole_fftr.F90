@@ -39,7 +39,8 @@
 
 #include "abi_common.h"
 
-subroutine multipoles_fftr(arraysp,dipole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin)
+!KYSC 20170209 quadrupole tensor
+subroutine quadrupole_fftr(arraysp,dipole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin)
 
  use defs_basis
  use defs_abitypes
@@ -49,7 +50,7 @@ subroutine multipoles_fftr(arraysp,dipole,mpi_enreg,nfft,ngfft,nspden,rprimd,new
 !This section has been created automatically by the script Abilint (TD).
 !Do not modify the following lines by hand.
 #undef ABI_FUNC
-#define ABI_FUNC 'multipoles_fftr'
+#define ABI_FUNC 'quadrupole_fftr'
  use interfaces_14_hidewrite
 !End of the abilint section
 
@@ -75,143 +76,11 @@ subroutine multipoles_fftr(arraysp,dipole,mpi_enreg,nfft,ngfft,nspden,rprimd,new
  real(dp),allocatable :: wrapfft(:)
  real(dp), allocatable :: tmpsp(:,:)
 
-! *************************************************************************
+ print *, "yo working function of quadrupole_fftr from new file"
 
- ABI_ALLOCATE(tmpsp,(nfft,nspden))
+end subroutine quadrupole_fftr
 
- nfftot = ngfft(1)*ngfft(2)*ngfft(3)
- invn1 = one / ngfft(1)
- invn2 = one / ngfft(2)
- invn3 = one / ngfft(3)
-
-
-!for the moment impose no fft parallelization
-!FIXME: needs to know somehow which fft points (i1i2i3 triplets) are on this processor...
- if (nfft /= nfftot) then 
-   write (message,'(3a)') 'Error: fft parallelization of multipoles_fftr is not coded yet.',ch10,&
-&   ' return from routine and continue as if nothing happened'
-   call wrtout(std_out, message, 'COLL')
-   return
- end if
-
-!multiply value at each point by xred1
-!FIXME: make this more efficient than looping explicitly over n2 n3
-!also check if ordering is correct wrt fft grid: z cycles fastest?
- ABI_ALLOCATE(wrapfft,(ngfft(1)))
- do ifft1 = 1, ngfft(1)
-   wrapfft(ifft1) = mod((ifft1-1-neworigin(1)+half*ngfft(1)), dble(ngfft(1))) - half*ngfft(1)
- end do
- ifft = 1
- do ifft3 = 1, ngfft(3)
-   do ifft2 = 1, ngfft(2)
-     do ifft1 = 1, ngfft(1)
-       tmpsp(ifft,:) = arraysp(ifft,:) * wrapfft(ifft1) * invn1
-       ifft = ifft + 1
-     end do
-   end do
- end do
- ABI_DEALLOCATE(wrapfft)
-
-!average over cell
- call mean_fftr(tmpsp,meansp,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
- dipole(1,:) = meansp
-
-!multiply value at each point by xred2
- ABI_ALLOCATE(wrapfft,(ngfft(2)))
- do ifft2 = 1, ngfft(2)
-   wrapfft(ifft2) = mod((ifft2-1-neworigin(2)+half*ngfft(2)), dble(ngfft(2))) - half*ngfft(2)
- end do
- ifft = 1
- do ifft3 = 1, ngfft(3)
-   do ifft2 = 1, ngfft(2)
-     do ifft1 = 1, ngfft(1)
-       tmpsp(ifft,:) = arraysp(ifft,:) * wrapfft(ifft2) * invn2
-       ifft = ifft + 1
-     end do
-   end do
- end do
- ABI_DEALLOCATE(wrapfft)
-
-!average over cell
- call mean_fftr(tmpsp,meansp,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
- dipole(2,:) = meansp
-
-!multiply value at each point by xred3
- ABI_ALLOCATE(wrapfft,(ngfft(3)))
- do ifft3 = 1, ngfft(3)
-   wrapfft(ifft3) = mod((ifft3-1-neworigin(3)+half*ngfft(3)), dble(ngfft(3))) - half*ngfft(3)
-   write(std_out,*) ifft3, wrapfft(ifft3)
- end do
- ifft = 1
- do ifft3 = 1, ngfft(3)
-   do ifft2 = 1, ngfft(2)
-     do ifft1 = 1, ngfft(1)
-       tmpsp(ifft,:) = arraysp(ifft,:) * wrapfft(ifft3) * invn3
-       ifft = ifft + 1
-     end do
-   end do
- end do
- ABI_DEALLOCATE(wrapfft)
-
-!average over cell
- call mean_fftr(tmpsp,meansp,nfft,nfftot,nspden)
- dipole(3,:) = meansp
-
-!Turn xred to cartesian space for output
- do ispden = 1, nspden
-   dipole(:,ispden) = matmul(rprimd,dipole(:,ispden))
- end do
-
-
- ABI_DEALLOCATE(tmpsp)
-
-end subroutine multipoles_fftr
-!!***
-
-!{\src2tex{textfont=tt}}
-!!****f* ABINIT/multipoles_out
-!! NAME
-!! multipoles_out
-!!
-!! FUNCTION
-!!  Output multipole moments of input array on FFT grid, calculated with multipoles_fftr
-!!  Namely, the electrical dipole, quadrupole, etc... of the electron density
-!!
-!! COPYRIGHT
-!! Copyright (C) 2010-2014 ABINIT group (MJV)
-!! This file is distributed under the terms of the
-!! GNU General Public License, see ~abinit/COPYING
-!! or http://www.gnu.org/copyleft/gpl.txt .
-!!
-!! INPUTS
-!!  arraysp(nfft,nspden)=the array whose average has to be computed
-!!  mpi_enreg=information about MPI parallelization
-!!  nfft=number of FFT points stored by one proc
-!!  nfftot=total number of FFT points
-!!  ngfft =number of subdivisions along each lattice vector
-!!  nspden=number of spin-density components
-!!  rprimd = dimensionful lattice vectors
-!!
-!! OUTPUT
-!!
-!! SIDE EFFECTS
-!!  print to str_out
-!!
-!! NOTES
-!!
-!! PARENTS
-!!      outscfcv
-!!
-!! CHILDREN
-!!      multipoles_fftr,wrtout
-!!
-!! SOURCE
-
-#if defined HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-subroutine multipoles_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
+subroutine quadrupole_tensor_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
 &  ntypat,rprimd,typat,ucvol,xred,ziontypat)
 
  use m_profiling_abi
@@ -221,9 +90,9 @@ subroutine multipoles_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
 !This section has been created automatically by the script Abilint (TD).
 !Do not modify the following lines by hand.
 #undef ABI_FUNC
-#define ABI_FUNC 'multipoles_out'
+#define ABI_FUNC 'quadrupole_tensor_out'
  use interfaces_14_hidewrite
- use interfaces_53_spacepar, except_this_one => multipoles_out
+ use interfaces_53_spacepar, except_this_one => quadrupole_tensor_out
 !End of the abilint section
 
  implicit none
@@ -268,7 +137,8 @@ subroutine multipoles_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
 !get electronic part of dipole with respect to center of charge of ions
  ABI_ALLOCATE(dipole_el,(3,nspden))
 
- call multipoles_fftr(arraysp,dipole_el,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
+ !call multipoles_fftr(arraysp,dipole_el,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
+ call quadrupole_fftr(arraysp,dipole_el,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
  dipole_el = dipole_el * ucvol
 
  dipole_tot(1) = -sum(dipole_el(1,:))
@@ -291,5 +161,5 @@ subroutine multipoles_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
 
  ABI_DEALLOCATE(dipole_el)
  
-end subroutine multipoles_out
-!!***
+end subroutine quadrupole_tensor_out
+!KYSC END
