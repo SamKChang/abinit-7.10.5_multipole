@@ -104,7 +104,7 @@ end interface
 
 !KYSC 20170209 quadrupole tensor
 interface
- subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin)
+ subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin,ucvol)
   use defs_basis
   use defs_abitypes
   implicit none
@@ -116,6 +116,7 @@ interface
   real(dp),intent(out) :: quadrupole(6,nspden)
   real(dp),intent(in) :: neworigin(3)
   real(dp),intent(in) :: rprimd(3,3)
+  real(dp),intent(in) :: ucvol
  end subroutine quadrupole_fftr
 end interface
 
