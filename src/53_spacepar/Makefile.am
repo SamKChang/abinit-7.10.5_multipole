@@ -29,6 +29,7 @@ lib53_spacepar_srcs = \
 	dotprod_vn.F90 \
 	meanvalue_g.F90 \
 	multipoles_fftr.F90 \
+	quadrupole_fftr.F90 \
 	overlap_g.F90 \
 	interfaces_53_spacepar.F90
 
@@ -41,6 +42,7 @@ CLEANFILES = \
 	dotprod_vn_cpp.f90 \
 	meanvalue_g_cpp.f90 \
 	multipoles_fftr_cpp.f90 \
+	quadrupole_fftr_cpp.f90 \
 	overlap_g_cpp.f90 \
 	interfaces_53_spacepar_cpp.f90
 
@@ -63,5 +65,6 @@ CLEANFILES += \
 	interfaces_53_spacepar.$(MODEXT) 
 
 multipoles_fftr.$(OBJEXT): interfaces_53_spacepar.$(OBJEXT) 
+quadrupole_fftr.$(OBJEXT): interfaces_53_spacepar.$(OBJEXT) 
 
 EXTRA_DIST += _53_spacepar_

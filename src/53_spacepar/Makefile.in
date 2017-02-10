@@ -93,7 +93,7 @@ lib53_spacepar_a_AR = $(AR) $(ARFLAGS)
 lib53_spacepar_a_LIBADD =
 am__objects_1 = dotprod_vn.$(OBJEXT) meanvalue_g.$(OBJEXT) \
 	multipoles_fftr.$(OBJEXT) overlap_g.$(OBJEXT) \
-	interfaces_53_spacepar.$(OBJEXT)
+	quadrupole_fftr.$(OBJEXT) interfaces_53_spacepar.$(OBJEXT)
 am_lib53_spacepar_a_OBJECTS = $(am__objects_1)
 lib53_spacepar_a_OBJECTS = $(am_lib53_spacepar_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -728,6 +728,7 @@ lib53_spacepar_srcs = \
 	dotprod_vn.F90 \
 	meanvalue_g.F90 \
 	multipoles_fftr.F90 \
+	quadrupole_fftr.F90 \
 	overlap_g.F90 \
 	interfaces_53_spacepar.F90
 
@@ -748,7 +749,7 @@ lib53_spacepar_a_SOURCES = $(lib53_spacepar_srcs)
 #To do that: config/scripts/abilint --dependencies . .
 CLEANFILES = dotprod_vn_cpp.f90 meanvalue_g_cpp.f90 \
 	multipoles_fftr_cpp.f90 overlap_g_cpp.f90 \
-	interfaces_53_spacepar_cpp.f90 \
+	quadrupole_fftr_cpp.f90 interfaces_53_spacepar_cpp.f90 \
 	interfaces_53_spacepar.$(MODEXT)
 EXTRA_DIST = abinit.src abinit.dep _53_spacepar_
 all: all-am
@@ -1001,6 +1002,7 @@ uninstall-am:
 
 
 multipoles_fftr.$(OBJEXT): interfaces_53_spacepar.$(OBJEXT) 
+quadrupole_fftr.$(OBJEXT): interfaces_53_spacepar.$(OBJEXT) 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
