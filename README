@@ -2,6 +2,11 @@ Modified ABINIT source to print quadrupole tensor.
 The changes can be seen by the 
 [compare tool](https://github.com/SamKChang/abinit-7.10.5_multipole/compare/multipole_tensor)
 
+to clone, use the command
+```
+git clone -b multipole_tensor --single-branch https://github.com/SamKChang/abinit-7.10.5_multipole.git
+```
+
 README for ABINIT
 =================
 
