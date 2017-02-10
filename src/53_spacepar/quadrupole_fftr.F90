@@ -40,7 +40,7 @@
 #include "abi_common.h"
 
 !KYSC 20170209 quadrupole tensor
-subroutine quadrupole_fftr(arraysp,dipole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin)
+subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin)
 
  use defs_basis
  use defs_abitypes
@@ -64,20 +64,128 @@ subroutine quadrupole_fftr(arraysp,dipole,mpi_enreg,nfft,ngfft,nspden,rprimd,new
  real(dp),intent(in) :: neworigin(3)
  real(dp),intent(in) :: arraysp(nfft,nspden)
  real(dp),intent(in) :: rprimd(3,3)
- real(dp),intent(out) :: dipole(3,nspden)
+ real(dp),intent(out) :: quadrupole(6,nspden)
 
 !Local variables-------------------------------
 !scalars
  integer :: ifft1, ifft2, ifft3, ifft, ispden, nfftot
+ real(dp) :: r_size, r_x, r_y, r_z
  character(len=500) :: message
  real(dp) :: invn1, invn2, invn3
 !arrays
- real(dp) :: meansp(nspden)
- real(dp),allocatable :: wrapfft(:)
- real(dp), allocatable :: tmpsp(:,:)
+ real(dp),allocatable :: wrapfft1(:)
+ real(dp),allocatable :: wrapfft2(:)
+ real(dp),allocatable :: wrapfft3(:)
+ real(dp) :: meansp_xx(nspden)
+ real(dp) :: meansp_yy(nspden)
+ real(dp) :: meansp_zz(nspden)
+ real(dp) :: meansp_xy(nspden)
+ real(dp) :: meansp_xz(nspden)
+ real(dp) :: meansp_yz(nspden)
+ real(dp), allocatable :: tmpsp_xx(:,:)
+ real(dp), allocatable :: tmpsp_yy(:,:)
+ real(dp), allocatable :: tmpsp_zz(:,:)
+ real(dp), allocatable :: tmpsp_xy(:,:)
+ real(dp), allocatable :: tmpsp_xz(:,:)
+ real(dp), allocatable :: tmpsp_yz(:,:)
 
  print *, "yo working function of quadrupole_fftr from new file"
 
+ ABI_ALLOCATE(tmpsp_xx,(nfft,nspden))
+ ABI_ALLOCATE(tmpsp_yy,(nfft,nspden))
+ ABI_ALLOCATE(tmpsp_zz,(nfft,nspden))
+ ABI_ALLOCATE(tmpsp_xy,(nfft,nspden))
+ ABI_ALLOCATE(tmpsp_xz,(nfft,nspden))
+ ABI_ALLOCATE(tmpsp_yz,(nfft,nspden))
+
+ nfftot = ngfft(1)*ngfft(2)*ngfft(3)
+ invn1 = one / ngfft(1) ! to get r_x
+ invn2 = one / ngfft(2) ! to get r_y
+ invn3 = one / ngfft(3) ! to get r_z
+
+!for the moment impose no fft parallelization
+!FIXME: needs to know somehow which fft points (i1i2i3 triplets) are on this processor...
+ if (nfft /= nfftot) then
+   write (message,'(3a)') 'Error: fft parallelization of multipoles_fftr is not coded yet.',ch10,&
+&   ' return from routine and continue as if nothing happened'
+   call wrtout(std_out, message, 'COLL')
+   return
+ end if
+
+ ABI_ALLOCATE(wrapfft1,(ngfft(1)))
+ ABI_ALLOCATE(wrapfft2,(ngfft(2)))
+ ABI_ALLOCATE(wrapfft3,(ngfft(3)))
+ do ifft1 = 1, ngfft(1)
+   wrapfft1(ifft1) = mod((ifft1-1-neworigin(1)+half*ngfft(1)), dble(ngfft(1))) - half*ngfft(1)
+ end do
+ do ifft2 = 1, ngfft(2)
+   wrapfft2(ifft2) = mod((ifft2-1-neworigin(2)+half*ngfft(2)), dble(ngfft(2))) - half*ngfft(2)
+ end do
+ do ifft3 = 1, ngfft(3)
+   wrapfft3(ifft3) = mod((ifft3-1-neworigin(3)+half*ngfft(3)), dble(ngfft(3))) - half*ngfft(3)
+ end do
+
+!!!!! Qxx !!!!!
+ ifft = 1
+ do ifft3 = 1, ngfft(3)
+   do ifft2 = 1, ngfft(2)
+     do ifft1 = 1, ngfft(1)
+
+       r_x = (wrapfft1(ifft1) * invn1)
+       r_y = (wrapfft2(ifft2) * invn2)
+       r_z = (wrapfft3(ifft3) * invn3)
+       r_size = (r_x**2 + r_y**2 + r_z**2)
+
+       tmpsp_xx(ifft,:) = arraysp(ifft,:) * (3 * r_x**2 - r_size)
+       tmpsp_yy(ifft,:) = arraysp(ifft,:) * (3 * r_y**2 - r_size)
+       tmpsp_zz(ifft,:) = arraysp(ifft,:) * (3 * r_z**2 - r_size)
+
+       tmpsp_xy(ifft,:) = arraysp(ifft,:) * (3 * r_x * r_y)
+       tmpsp_xz(ifft,:) = arraysp(ifft,:) * (3 * r_x * r_z)
+       tmpsp_yz(ifft,:) = arraysp(ifft,:) * (3 * r_y * r_z)
+
+       ifft = ifft + 1
+     end do
+   end do
+ end do
+
+ call mean_fftr(tmpsp_xx,meansp_xx,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
+ call mean_fftr(tmpsp_yy,meansp_yy,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
+ call mean_fftr(tmpsp_zz,meansp_zz,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
+ call mean_fftr(tmpsp_xy,meansp_xy,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
+ call mean_fftr(tmpsp_xz,meansp_xz,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
+ call mean_fftr(tmpsp_yz,meansp_yz,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
+
+ print *, "yo first try of Qxx"
+ print *, meansp_xx
+ print *, "yo first try of Qyy"
+ print *, meansp_yy
+ print *, "yo first try of Qzz"
+ print *, meansp_zz
+ print *, "yo first try of Qxy"
+ print *, meansp_xy
+ print *, "yo first try of Qxz"
+ print *, meansp_xz
+ print *, "yo first try of Qyz"
+ print *, meansp_yz
+ quadrupole(1,:) = meansp_xx
+ quadrupole(2,:) = meansp_yy
+ quadrupole(3,:) = meansp_zz
+ quadrupole(4,:) = meansp_xy
+ quadrupole(5,:) = meansp_xz
+ quadrupole(6,:) = meansp_yz
+
+
+ ABI_DEALLOCATE(wrapfft1)
+ ABI_DEALLOCATE(wrapfft2)
+ ABI_DEALLOCATE(wrapfft3)
+
+ ABI_DEALLOCATE(tmpsp_xx)
+ ABI_DEALLOCATE(tmpsp_yy)
+ ABI_DEALLOCATE(tmpsp_zz)
+ ABI_DEALLOCATE(tmpsp_xy)
+ ABI_DEALLOCATE(tmpsp_xz)
+ ABI_DEALLOCATE(tmpsp_yz)
 end subroutine quadrupole_fftr
 
 subroutine quadrupole_tensor_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
@@ -116,6 +224,7 @@ subroutine quadrupole_tensor_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
 
  real(dp) :: center_of_charge(3)
  real(dp), allocatable :: dipole_el(:,:)
+ real(dp), allocatable :: quadrupole(:,:)
  real(dp) :: dipole_ions(3), ziontotal, dipole_tot(3)
 
 ! *************************************************************************
@@ -136,10 +245,11 @@ subroutine quadrupole_tensor_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
 
 !get electronic part of dipole with respect to center of charge of ions
  ABI_ALLOCATE(dipole_el,(3,nspden))
+ ABI_ALLOCATE(quadrupole,(6,nspden))
 
- !call multipoles_fftr(arraysp,dipole_el,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
- call quadrupole_fftr(arraysp,dipole_el,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
- dipole_el = dipole_el * ucvol
+ call quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
+ !dipole_el = dipole_el * ucvol
+ quadrupole = quadrupole * ucvol
 
  dipole_tot(1) = -sum(dipole_el(1,:))
  dipole_tot(2) = -sum(dipole_el(2,:))
