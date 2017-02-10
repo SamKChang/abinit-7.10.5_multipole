@@ -40,7 +40,7 @@
 #include "abi_common.h"
 
 !KYSC 20170209 quadrupole tensor
-subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin)
+subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,neworigin,ucvol)
 
  use defs_basis
  use defs_abitypes
@@ -59,6 +59,7 @@ subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd
 !Arguments ------------------------------------
 !scalars
  integer,intent(in) :: nfft,ngfft(3),nspden
+ real(dp),intent(in) :: ucvol
  type(MPI_type),intent(in) :: mpi_enreg
 !arrays
  real(dp),intent(in) :: neworigin(3)
@@ -89,7 +90,7 @@ subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd
  real(dp), allocatable :: tmpsp_xz(:,:)
  real(dp), allocatable :: tmpsp_yz(:,:)
 
- print *, "yo working function of quadrupole_fftr from new file"
+ print *, "Quadrupole tensor:"
 
  ABI_ALLOCATE(tmpsp_xx,(nfft,nspden))
  ABI_ALLOCATE(tmpsp_yy,(nfft,nspden))
@@ -156,25 +157,25 @@ subroutine quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd
  call mean_fftr(tmpsp_xz,meansp_xz,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
  call mean_fftr(tmpsp_yz,meansp_yz,nfft,nfftot,nspden,mpi_comm_sphgrid=mpi_enreg%comm_fft)
 
- print *, "yo first try of Qxx"
- print *, meansp_xx
- print *, "yo first try of Qyy"
- print *, meansp_yy
- print *, "yo first try of Qzz"
- print *, meansp_zz
- print *, "yo first try of Qxy"
- print *, meansp_xy
- print *, "yo first try of Qxz"
- print *, meansp_xz
- print *, "yo first try of Qyz"
- print *, meansp_yz
+ meansp_xx = meansp_xx * ucvol 
+ meansp_yy = meansp_yy * ucvol
+ meansp_zz = meansp_zz * ucvol
+ meansp_xy = meansp_xy * ucvol
+ meansp_xz = meansp_xz * ucvol
+ meansp_yz = meansp_yz * ucvol
+
+ print *, "quadrupole tensor component Qxx: ", meansp_xx
+ print *, "quadrupole tensor component Qyy: ", meansp_yy
+ print *, "quadrupole tensor component Qzz: ", meansp_zz
+ print *, "quadrupole tensor component Qxy: ", meansp_xy
+ print *, "quadrupole tensor component Qxz: ", meansp_xz
+ print *, "quadrupole tensor component Qyz: ", meansp_yz
  quadrupole(1,:) = meansp_xx
  quadrupole(2,:) = meansp_yy
  quadrupole(3,:) = meansp_zz
  quadrupole(4,:) = meansp_xy
  quadrupole(5,:) = meansp_xz
  quadrupole(6,:) = meansp_yz
-
 
  ABI_DEALLOCATE(wrapfft1)
  ABI_DEALLOCATE(wrapfft2)
@@ -247,9 +248,10 @@ subroutine quadrupole_tensor_out(arraysp,mpi_enreg,natom,nfft,ngfft,nspden,&
  ABI_ALLOCATE(dipole_el,(3,nspden))
  ABI_ALLOCATE(quadrupole,(6,nspden))
 
- call quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge)
+ call quadrupole_fftr(arraysp,quadrupole,mpi_enreg,nfft,ngfft,nspden,rprimd,center_of_charge,ucvol)
  !dipole_el = dipole_el * ucvol
  quadrupole = quadrupole * ucvol
+ print *, "multiplicative factor", ucvol
 
  dipole_tot(1) = -sum(dipole_el(1,:))
  dipole_tot(2) = -sum(dipole_el(2,:))
